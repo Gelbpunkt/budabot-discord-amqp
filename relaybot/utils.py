@@ -5,7 +5,7 @@ import discord
 
 def format_discord_message(message: discord.Message) -> str:
     """Formats a Discord message to publish to AMQP"""
-    msg = f"grc [{message.guild.name}/{message.channel.name}] {message.author.display_name}: {message.content}"
+    msg = f"grc [#{message.guild.name}/{message.channel.name}] {message.author.display_name}: {message.content}"
     return msg
 
 
