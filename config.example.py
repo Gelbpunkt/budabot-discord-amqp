@@ -10,3 +10,15 @@ amqp_exchange = "budabot"
 discord_channel_id = 1234567890
 # Logfile path, set to None to have stdout
 logfile = None
+# The bot prefix
+# used e.g. for !confirm code
+prefix = "!"
+# format for sending discord messages to AMQP
+# valid format words:
+# server: the name of the discord server
+# channel: the name of the discord server
+# nick: nickname of the message sender
+# username: username of the message sender
+# discrim: the 4-number discriminator of the  user
+# content: message content
+chat_format = "[#{server}/{channel}] {nick}: {content}"

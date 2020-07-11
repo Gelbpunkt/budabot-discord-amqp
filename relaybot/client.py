@@ -64,7 +64,10 @@ class RelayClient(discord.Client):
             async for message in queue_iter:
                 async with message.process():
                     body = message.body.decode()
-                    if message.routing_key != self.config.queue_name and body.startswith("grc "):
+                    if (
+                        message.routing_key != self.config.queue_name
+                        and body.startswith("grc ")
+                    ):
                         logging.info(f"[AMQP Incoming] {body}")
                         text = format_amqp_message(body)
                         await self.publish_discord(text)
@@ -92,9 +95,22 @@ class RelayClient(discord.Client):
         """
         Event fired when a message is sent on Discord
         """
-        # Skip everything not in the relay channel or sent by the bot itself
-        if message.channel.id != self.config.discord_channel_id or message.author.bot:
-            return
-        text = format_discord_message(message)
-        logging.info(f"[Discord Incoming] {text}")
-        await self.publish_amqp(text)
+        # Simple command handling
+        # without commands.Bot as it has a lot of overhead
+        confirm_command = f"{self.config.prefix}confirm "
+        if message.content.startswith(confirm_command):
+            content = message.content[len(confirm_command) :]
+            await self.publish_amqp(f"discordconfirm {message.author.id} {content}")
+            await message.channel.send(
+                "I have submitted your discord confirmation request."
+            )
+        else:
+            # Skip everything not in the relay channel or sent by the bot itself
+            if (
+                message.channel.id != self.config.discord_channel_id
+                or message.author.bot
+            ):
+                return
+            text = format_discord_message(message)
+            logging.info(f"[Discord Incoming] {text}")
+            await self.publish_amqp(text)

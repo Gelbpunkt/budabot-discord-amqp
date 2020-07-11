@@ -2,10 +2,21 @@ import re
 
 import discord
 
+import config
+
 
 def format_discord_message(message: discord.Message) -> str:
     """Formats a Discord message to publish to AMQP"""
-    msg = f"grc [#{message.guild.name}/{message.channel.name}] {message.author.display_name}: {message.content}"
+    mapping = {
+        "server": message.guild.name,
+        "channel": message.channel.name,
+        "nick": message.author.display_name,
+        "username": message.author.name,
+        "discrim": message.author.discriminator,
+        "content": message.content,
+    }
+    msg = config.chat_format.format(**mapping)
+    msg = f"grc {msg}"
     return msg
 
 
