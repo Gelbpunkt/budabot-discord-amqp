@@ -50,11 +50,12 @@ class RelayClient(discord.Client):
         self.amqp = await aio_pika.connect_robust(self.config.amqp_uri)
         self.amqp_channel = await self.amqp.channel()
         self.amqp_queue = await self.amqp_channel.declare_queue(
-            self.config.amqp_read_channel, auto_delete=True
+            self.config.queue_name, auto_delete=True
         )
         self.amqp_exchange = await self.amqp_channel.declare_exchange(
-            self.config.amqp_write_channel, type="fanout", auto_delete=True
+            self.config.amqp_exchange, type="fanout", auto_delete=True
         )
+        await self.amqp_queue.bind(self.amqp_exchange)
 
     async def amqp_consumer(self) -> None:
         await self.connect_amqp()
@@ -62,16 +63,16 @@ class RelayClient(discord.Client):
         async with self.amqp_queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
-                    body = message.body.decode()
-                    logging.info(f"[AMQP Incoming] {body}")
-                    text = format_amqp_message(body)
-                    await self.publish_discord(text)
+                    if message.routing_key != self.config.queue_name:
+                        body = message.body.decode()
+                        logging.info(f"[AMQP Incoming] {body}")
+                        text = format_amqp_message(body)
+                        await self.publish_discord(text)
 
     async def publish_amqp(self, text: str) -> None:
         """Helper function to publish something to AMQP"""
         await self.amqp_exchange.publish(
-            aio_pika.Message(body=text.encode()),
-            routing_key=self.config.amqp_write_channel,
+            aio_pika.Message(body=text.encode()), routing_key=self.config.queue_name,
         )
 
     async def publish_discord(self, text: str) -> None:
