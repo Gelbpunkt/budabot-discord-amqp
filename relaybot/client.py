@@ -53,7 +53,7 @@ class RelayClient(discord.Client):
             self.config.amqp_read_channel, auto_delete=True
         )
         self.amqp_exchange = await self.amqp_channel.declare_exchange(
-            "direct", auto_delete=True
+            self.config.amqp_write_channel, type="fanout", auto_delete=True
         )
 
     async def amqp_consumer(self) -> None:
