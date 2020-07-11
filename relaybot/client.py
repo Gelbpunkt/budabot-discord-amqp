@@ -8,7 +8,7 @@ from typing import Optional
 import aio_pika
 import discord
 
-from .utils import format_amqp_message, format_discord_message
+from .utils import chunks, format_amqp_message, format_discord_message
 
 
 class RelayClient(discord.Client):
@@ -81,7 +81,11 @@ class RelayClient(discord.Client):
     async def publish_discord(self, text: str) -> None:
         """Helper function to publish something to Discord"""
         if self.discord_channel is not None:
-            await self.discord_channel.send(text)
+            if len(text) <= 2000:
+                await self.discord_channel.send(text)
+            else:
+                for chunk in chunks(text, 2000):
+                    await self.discord_channel.send(chunk)
 
     async def on_ready(self) -> None:
         """

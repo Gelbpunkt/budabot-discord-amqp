@@ -5,6 +5,12 @@ import discord
 import config
 
 
+def chunks(iterable, size):
+    """Yield successive n-sized chunks from an iterable."""
+    for i in range(0, len(iterable), size):
+        yield iterable[i : i + size]
+
+
 def format_discord_message(message: discord.Message) -> str:
     """Formats a Discord message to publish to AMQP"""
     mapping = {
