@@ -63,8 +63,8 @@ class RelayClient(discord.Client):
         async with self.amqp_queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
-                    if message.routing_key != self.config.queue_name:
-                        body = message.body.decode()
+                    body = message.body.decode()
+                    if message.routing_key != self.config.queue_name and body.startswith("grc "):
                         logging.info(f"[AMQP Incoming] {body}")
                         text = format_amqp_message(body)
                         await self.publish_discord(text)
