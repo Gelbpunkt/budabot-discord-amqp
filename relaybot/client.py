@@ -3,7 +3,7 @@ import logging
 import signal
 
 from types import ModuleType
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import aio_pika
 import discord
@@ -69,8 +69,11 @@ class RelayClient(discord.Client):
                         and body.startswith("grc ")
                     ):
                         logging.info(f"[AMQP Incoming] {body}")
-                        text = format_amqp_message(body)
-                        await self.publish_discord(text)
+                        if self.discord_channel is not None:
+                            text, embeds = format_amqp_message(
+                                body, self.discord_channel.guild
+                            )
+                            await self.publish_discord(text, embeds)
 
     async def publish_amqp(self, text: str) -> None:
         """Helper function to publish something to AMQP"""
@@ -78,14 +81,18 @@ class RelayClient(discord.Client):
             aio_pika.Message(body=text.encode()), routing_key=self.config.queue_name,
         )
 
-    async def publish_discord(self, text: str) -> None:
+    async def publish_discord(self, text: str, embeds: List[Tuple[str, str]]) -> None:
         """Helper function to publish something to Discord"""
-        if self.discord_channel is not None:
-            if len(text) <= 2000:
-                await self.discord_channel.send(text)
-            else:
-                for chunk in chunks(text, 2000):
-                    await self.discord_channel.send(chunk)
+        embeds = [
+            discord.Embed(title=title, description=desc) for title, desc in embeds
+        ]
+        if len(text) <= 2000:
+            await self.discord_channel.send(text, embed=embeds[0] if embeds else None)
+        else:
+            for idx, chunk in enumerate(chunks(text, 2000)):
+                await self.discord_channel.send(
+                    chunk, embed=embeds[idx] if len(embeds) > idx else None
+                )
 
     async def on_ready(self) -> None:
         """
@@ -102,12 +109,26 @@ class RelayClient(discord.Client):
         # Simple command handling
         # without commands.Bot as it has a lot of overhead
         confirm_command = f"{self.config.prefix}confirm "
+        create_emoji_command = f"{self.config.prefix}createemojis"
         if message.content.startswith(confirm_command):
             content = message.content[len(confirm_command) :]
             await self.publish_amqp(f"discordconfirm {message.author.id} {content}")
             await message.channel.send(
                 "I have submitted your discord confirmation request."
             )
+        elif message.content.startswith(create_emoji_command):
+            for emoji_file, emoji_name in self.config.emojis.items():
+                with open(f"img/transparent_images/{emoji_file}", "rb") as fi:
+                    data = fi.read()
+                try:
+                    await message.guild.create_custom_emoji(
+                        name=emoji_name, image=data, reason="createemoji command"
+                    )
+                except discord.Forbidden:
+                    return await message.channel.send(
+                        "I seem to lack permissions to create emojis."
+                    )
+            await message.channel.send("Done creating emojis.")
         else:
             # Skip everything not in the relay channel or sent by the bot itself
             if (
