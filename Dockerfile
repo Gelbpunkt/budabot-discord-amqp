@@ -1,4 +1,4 @@
-FROM python:3.8-alpine
+FROM docker.io/gelbpunkt/python:gcc10
 
 WORKDIR /bot
 COPY requirements.txt .

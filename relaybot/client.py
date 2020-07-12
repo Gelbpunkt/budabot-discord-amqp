@@ -53,7 +53,7 @@ class RelayClient(discord.Client):
             self.config.queue_name, auto_delete=True
         )
         self.amqp_exchange = await self.amqp_channel.declare_exchange(
-            self.config.amqp_exchange, type="fanout", auto_delete=True
+            self.config.exchange_name, type="fanout", auto_delete=True
         )
         await self.amqp_queue.bind(self.amqp_exchange)
 

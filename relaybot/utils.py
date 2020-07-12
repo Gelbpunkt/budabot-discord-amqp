@@ -28,6 +28,65 @@ def format_discord_message(message: discord.Message) -> str:
     return msg
 
 
+# A lot of helper regexes
+# -----------------------
+# Matches ingame image files
+tdb_regex = re.compile(r"<img src=tdb://id:([A-Z|_|0-9]*)>")
+# Matches any HTML element or entity
+html_regex = re.compile(r"<[^:].*?>|\">|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});")
+# Matches itemref:// links
+itemref_regex = re.compile(
+    r"<a href=(['\"])itemref://([0-9]+)/([0-9]+)/([0-9]+)\1>([A-z| |0-9]*)</a>"
+)
+# Matches itemid:// links to nanos
+nano_regex = re.compile(r"<a href=(['\"])itemid://53019/([0-9]+)\1>([A-z| |0-9]*)</a>")
+# Matches single-line img elements
+img_regex = re.compile(r"^<img.+?>$\n", flags=re.MULTILINE | re.DOTALL)
+# Matches clickable text
+click_regex = re.compile(
+    r"<a href=(['\"])text://(.+?)\1>(.*)</a>", flags=re.MULTILINE | re.DOTALL
+)
+
+# Helper replace functions
+# ------------------------
+
+
+def repl_emoji(text, emojis):
+    def repl(match):
+        actual = match.group(1)
+        name = f"{actual}.png"
+        if val := config.emojis.get(name):
+            return str(discord.utils.get(emojis, name=val))
+        else:
+            return actual
+
+    return re.sub(tdb_regex, repl, text)
+
+
+def repl_itemref(text):
+    return re.sub(
+        itemref_regex,
+        lambda m: f"[{discord.utils.escape_markdown(m.group(5))}](https://aoitems.com/item/{m.group(2)}/{m.group(4)}/)",
+        text,
+    )
+
+
+def repl_nano(text):
+    return re.sub(
+        nano_regex,
+        lambda m: f"[{discord.utils.escape_markdown(m.group(3))}](https://aoitems.com/item/{m.group(2)}/)",
+        text,
+    )
+
+
+def repl_img(text):
+    return re.sub(img_regex, "", text)
+
+
+def repl_html(text):
+    return re.sub(html_regex, "", text)
+
+
 def format_amqp_message(
     message: str, guild: discord.Guild
 ) -> Tuple[str, List[Tuple[str, str]]]:
@@ -37,52 +96,16 @@ def format_amqp_message(
     """
     # remove grc prefix
     message = message[4:]
-    # replace all emojifyable things
-    tdb_regex = re.compile(r"<img src=tdb://id:([A-Z|_|0-9]*)>")
-
-    def repl(match):
-        actual = match.group(1)
-        name = f"{actual}.png"
-        if val := config.emojis.get(name):
-            return str(discord.utils.get(guild.emojis, name=val))
-        else:
-            return actual
-
-    text = re.sub(tdb_regex, repl, message)
-
-    html_regex = re.compile(r"<[^:].*?>|\">|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});")
-    itemref_regex = re.compile(
-        r"<a href=(['\"])itemref://([0-9]+)/([0-9]+)/([0-9]+)\1>([A-z| |0-9]*)</a>"
-    )
-    nano_regex = re.compile(
-        r"<a href=(['\"])itemid://53019/([0-9]+)\1>([A-z| |0-9]*)</a>"
-    )
-    text = re.sub(r"^<img.+?>$\n", "", text, flags=re.MULTILINE | re.DOTALL)
-    print(text)
-
-    def repl_itemref(text):
-        return re.sub(
-            itemref_regex,
-            lambda m: f"[{m.group(5)}](https://aoitems.com/item/{m.group(2)}/{m.group(4)}/)",
-            text,
-        )
-
-    def repl_nano(text):
-        return re.sub(
-            nano_regex,
-            lambda m: f"[{m.group(3)}](https://aoitems.com/item/{m.group(2)}/)",
-            text,
-        )
+    text = repl_emoji(message, guild.emojis)
+    text = repl_img(text)
 
     # Find any clickable stuff
     embeds = []
-    for match in re.finditer(
-        r"<a href=(['\"])text://(.+?)\1>(.*)</a>", text, flags=re.MULTILINE | re.DOTALL
-    ):
+    for match in re.finditer(click_regex, text):
         full = match.group(0)
         description = repl_itemref(match.group(2))
         description = repl_nano(description)
-        description = re.sub(html_regex, "", description)
+        description = repl_html(description)
         title = match.group(3)
         idx = text.index(full)
         text = text[:idx] + text[idx + len(full) :]
@@ -91,5 +114,5 @@ def format_amqp_message(
         embeds.append((title, description))
 
     # Remove all HTML tags and entities from text
-    text = re.sub(html_regex, "", text)
+    text = repl_html(text)
     return text, embeds
