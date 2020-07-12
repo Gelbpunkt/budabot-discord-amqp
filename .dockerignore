@@ -1,1 +1,6 @@
-img/original_images/
+img/original_images/*
+img/original_images
+.git/**/*
+.git
+.mypy_cache
+.mypy_cache/**/*

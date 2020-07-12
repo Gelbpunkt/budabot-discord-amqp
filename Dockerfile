@@ -1,15 +1,18 @@
 FROM docker.io/gelbpunkt/python:gcc10
 
-WORKDIR /bot
-COPY requirements.txt .
-
-RUN apk add --virtual .build gcc musl-dev && \
-    pip install --no-cache-dir -r requirements.txt && \
+RUN apk add --no-cache libgcc && \
+    apk add --no-cache --virtual .build gcc musl-dev libffi-dev openssl-dev && \
+    pip install --no-cache-dir poetry && \
     apk del .build && \
     adduser -S bot
 
 USER bot
+WORKDIR /bot
+
+COPY poetry.lock pyproject.toml .
+
+RUN poetry install --no-dev
 
 COPY . .
 
-CMD ["python", "main.py"]
+CMD ["poetry", "run", "bot"]

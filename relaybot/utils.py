@@ -1,10 +1,12 @@
 import re
 
-from typing import Any, Iterable, Iterator, List, Tuple
+from typing import Any, Iterable, Iterator
 
 import discord
 
 import config
+
+from .models import AOMessage
 
 
 def chunks(iterable: Iterable[Any], size: int) -> Iterator[Any]:
@@ -88,14 +90,14 @@ def repl_html(text):
 
 
 def format_amqp_message(
-    message: str, guild: discord.Guild
-) -> Tuple[str, List[Tuple[str, str]]]:
+    message: AOMessage, guild: discord.Guild
+) -> tuple[str, list[tuple[str, str]]]:
     """
     Formats an AMQP message to publish to Discord.
     Returns a tuple of the message content and a list of strings for embed contents
     """
     # remove grc prefix
-    message = message[4:]
+    message = message.message[4:]
     text = repl_emoji(message, guild.emojis)
     text = repl_img(text)
 

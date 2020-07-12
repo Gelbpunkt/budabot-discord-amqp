@@ -1,0 +1,58 @@
+[tool.poetry]
+name = "relaybot"
+version = "0.1.0-dev"
+description = "AMQP based Discord chat bridge to Anarchy Online (Budabot 4.2)"
+license = "MIT"
+authors = [
+    "Jens Reidel <adrian@travitia.xyz>",
+    "Nadyita <nadyita@hodorraid.org>"
+]
+readme = "README.md"
+homepage = "https://github.com/Gelbpunkt/budabot-discord-amqp/"
+repository = "git@github.com:Gelbpunkt/budabot-discord-amqp.git"
+keywords = ["discord", "budabot", "anarchyonline", "amqp", "relay"]
+
+[tool.poetry.scripts]
+bot = "relaybot.__main__:run"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+orjson = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/orjson-3.1.0-cp39-cp39-linux_x86_64.whl" }
+certifi = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/certifi-2020.4.5.2-py2.py3-none-any.whl" }
+idna = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/idna-2.9-py2.py3-none-any.whl" }
+uvloop = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/uvloop-0.15.0.dev0-cp39-cp39-linux_x86_64.whl" }
+Brotli = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/Brotli-1.0.7-cp39-cp39-linux_x86_64.whl" }
+chardet = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/chardet-3.0.4-py2.py3-none-any.whl" }
+multidict = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/multidict-4.7.6-cp39-cp39-linux_x86_64.whl" }
+typing_extensions = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/typing_extensions-3.7.4.2-py3-none-any.whl" }
+pycparser = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/pycparser-2.20-py2.py3-none-any.whl" }
+attrs = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/attrs-19.3.0-py2.py3-none-any.whl" }
+cffi = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/cffi-1.14.0-cp39-cp39-linux_x86_64.whl" }
+pycares = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/pycares-3.1.1-cp39-cp39-linux_x86_64.whl" }
+aiodns = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/aiodns-2.0.0-py2.py3-none-any.whl" }
+async_timeout = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/async_timeout-4.0.0a2-py3-none-any.whl" }
+cchardet = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/cchardet-2.1.6-cp39-cp39-linux_x86_64.whl" }
+yarl = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/yarl-1.4.2-cp39-cp39-linux_x86_64.whl" }
+aiohttp = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/aiohttp-4.0.0a1-cp39-cp39-linux_x86_64.whl" }
+"discord.py" = { url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64-beta/wheels/discord.py-1.4.0a2396%2Bgdd8e60e-py3-none-any.whl" }
+aio_pika = "^6.6.1"
+
+[tool.poetry.dev-dependencies]
+black = { git = "https://github.com/psf/black.git", branch = "master" }
+isort = { git = "https://github.com/timothycrosley/isort.git", branch = "master" }
+flake9 = { git = "https://gitlab.com/retnikt/flake9.git", branch = "master" }
+
+[tool.isort]
+include_trailing_comma = true
+use_parentheses = true
+multi_line_output = 3
+force_grid_wrap = 0
+line_length = 88
+known_third_party = ["discord", "aio_pika"]
+known_first_party = ["config"]
+lines_between_types = 1
+
+[tool.flake8]
+extend-ignore = "E501,E203,E731,E231"
+max-line-length = 88
+per-file-ignores = ["relaybot/__main__.py:E402"]

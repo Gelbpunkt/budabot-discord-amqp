@@ -1,11 +1,19 @@
 #!/bin/env python
 import logging
+import sys
+
+import orjson
+
+# Ugly patch to use orjson globally
+sys.modules["json"] = orjson
+sys.path.insert(0, "/bot")
 
 import discord
+import uvloop
 
 import config
 
-from relaybot.client import RelayClient
+from .client import RelayClient
 
 # Set up a log handler
 logging.basicConfig(
@@ -21,5 +29,11 @@ client = RelayClient(
     config=config,
 )
 
+
+def run():
+    uvloop.install()
+    client.run(config.token)
+
+
 if __name__ == "__main__":
-    client.start_all()
+    run()

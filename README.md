@@ -1,6 +1,6 @@
 # Budabot Discord AMQP Relay
 
-This is a simple chat relay for Budabot to Discord using only AMQP and Discord for communication.
+This is a simple chat relay for Budabot to Discord using only AMQP and Discord for communication. It requires Nadyita's Budabot fork from [here](https://github.com/Nadyita/Budabot).
 
 ## Configuration File
 

@@ -1,49 +1,30 @@
 import asyncio
 import logging
-import signal
 
 from types import ModuleType
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import aio_pika
 import discord
 
+from .models import AOMessage
 from .utils import chunks, format_amqp_message, format_discord_message
 
 
-class RelayClient(discord.Client):
+class RelayClient(discord.AutoShardedClient):
     """A discord Client instance"""
 
     def __init__(self, *args, **kwargs) -> None:
         self.config: ModuleType = kwargs.pop("config")
         self.discord_channel: Optional[discord.Channel] = None
+        self.first_ready = True
+        self.amqp_task: Optional[asyncio.Task] = None
         super().__init__(*args, **kwargs)
 
-    def start_all(self) -> None:
-        """Starts the AMQP and Discord listeners"""
-        loop = asyncio.get_event_loop()
-        loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
-        loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
-
-        async def runner() -> None:
-            try:
-                await self.start(self.config.token)
-            finally:
-                await self.close()
-
-        def stop_loop_on_completion(_) -> None:
-            loop.stop()
-
-        fut = asyncio.ensure_future(runner(), loop=loop)
-        fut.add_done_callback(stop_loop_on_completion)
-        asyncio.ensure_future(self.amqp_consumer(), loop=loop)
-
-        try:
-            loop.run_forever()
-        except KeyboardInterrupt:
-            logging.info("Received signal to terminate bot and event loop.")
-        finally:
-            fut.remove_done_callback(stop_loop_on_completion)
+    async def close(self, *args, **kwargs) -> None:
+        self.amqp_task.cancel()
+        await self.amqp.close()
+        await super().close(*args, **kwargs)
 
     async def connect_amqp(self) -> None:
         """Connects to the AMQP queue"""
@@ -63,15 +44,12 @@ class RelayClient(discord.Client):
         async with self.amqp_queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
-                    body = message.body.decode()
-                    if (
-                        message.routing_key != self.config.queue_name
-                        and body.startswith("grc ")
-                    ):
-                        logging.info(f"[AMQP Incoming] {body}")
+                    if message.routing_key != self.config.queue_name:
+                        logging.info(f"[AMQP Incoming] {message.body}")
+                        message = AOMessage.from_json(message.body)
                         if self.discord_channel is not None:
                             text, embeds = format_amqp_message(
-                                body, self.discord_channel.guild
+                                message, self.discord_channel.guild
                             )
                             await self.publish_discord(text, embeds)
 
@@ -81,7 +59,7 @@ class RelayClient(discord.Client):
             aio_pika.Message(body=text.encode()), routing_key=self.config.queue_name,
         )
 
-    async def publish_discord(self, text: str, embeds: List[Tuple[str, str]]) -> None:
+    async def publish_discord(self, text: str, embeds: list[tuple[str, str]]) -> None:
         """Helper function to publish something to Discord"""
         embeds = [
             discord.Embed(title=title, description=desc) for title, desc in embeds
@@ -100,7 +78,10 @@ class RelayClient(discord.Client):
         Used to load the channel to send to
         """
         logging.info("Client is ready")
-        self.discord_channel = self.get_channel(self.config.discord_channel_id)
+        if self.first_ready:
+            self.amqp_task = asyncio.create_task(self.amqp_consumer())
+            self.discord_channel = self.get_channel(self.config.discord_channel_id)
+            self.first_ready = False
 
     async def on_message(self, message: discord.Message) -> None:
         """
