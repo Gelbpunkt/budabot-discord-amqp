@@ -223,7 +223,7 @@ voice = ["PyNaCl (1.3.0)"]
 [package.source]
 reference = ""
 type = "url"
-url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64-beta/wheels/discord.py-1.4.0a2396%2Bgdd8e60e-py3-none-any.whl"
+url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64-beta/wheels/discord.py-1.4.0a2396%2Bg4cda4ec-py3-none-any.whl"
 [[package]]
 category = "dev"
 description = "the modular source code checker: pep8 pyflakes and co"
@@ -421,7 +421,7 @@ version = "0.15.0.dev0"
 [package.source]
 reference = ""
 type = "url"
-url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64/wheels/uvloop-0.15.0.dev0-cp39-cp39-linux_x86_64.whl"
+url = "https://github.com/Gelbpunkt/alpine-python-wheels/raw/3.9-x86_64-beta/wheels/uvloop-0.15.0.dev0-cp39-cp39-linux_x86_64.whl"
 [[package]]
 category = "main"
 description = "Yet another URL library"
