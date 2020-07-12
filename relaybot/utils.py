@@ -97,7 +97,7 @@ def format_amqp_message(
     Returns a tuple of the message content and a list of strings for embed contents
     """
     # remove grc prefix
-    message = message.message[4:]
+    message = message.removeprefix("grc ")
     text = repl_emoji(message, guild.emojis)
     text = repl_img(text)
 
@@ -109,10 +109,8 @@ def format_amqp_message(
         description = repl_nano(description)
         description = repl_html(description)
         title = match.group(3)
-        idx = text.index(full)
-        text = text[:idx] + text[idx + len(full) :]
-        if description.startswith(title):
-            description = description[len(title) :]
+        text.replace(full, "", 1)
+        description.removeprefix(title)
         embeds.append((title, description))
 
     # Remove all HTML tags and entities from text
