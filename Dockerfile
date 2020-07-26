@@ -9,7 +9,7 @@ RUN apk add --no-cache libgcc && \
 USER bot
 WORKDIR /bot
 
-COPY poetry.lock pyproject.toml .
+COPY pyproject.toml poetry.lock .
 
 RUN poetry install --no-dev
 
